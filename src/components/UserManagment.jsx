@@ -30,11 +30,26 @@ const UserManagment = () => {
 
     const handleAction = async (action) => {
         try {
-          const res =  await axios.post(`${import.meta.env.VITE_API_URL}/users/action`, { action, userIds: selectedUsers, email });
-          console.log(res);
-            window.location.reload(); // Refresh the page to reflect changes
+            const currentUser = JSON.parse(localStorage.getItem('user')); // Get the current user from localStorage
+            const isBlockingSelf = selectedUsers.includes(currentUser.id); // Check if the user is blocking themselves
+    
+            // Perform the action
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/users/action`, { action, userIds: selectedUsers, email });
+            console.log(res);
+    
+            // If the user is blocking themselves
+            if (isBlockingSelf && action === 'block') {
+                // Update the user's status in localStorage
+                const updatedUser = { ...currentUser, status: 'blocked' };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+    
+                // Redirect to the login page
+                toast.error('Your account has been blocked.');
+                navigate('/'); // Redirect to the login page
+            } else {
+                window.location.reload(); // Refresh the page to reflect changes
+            }
         } catch (error) {
-            // toast.error('Error performing action:', error);
             if (error.response) {
                 // Handle 401 Unauthorized (e.g., redirect to login)
                 if (error.response.status === 401) {
